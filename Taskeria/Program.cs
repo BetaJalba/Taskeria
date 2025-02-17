@@ -24,6 +24,7 @@ List<Task> tasks = new List<Task>();
 
 for (int i = 0; i < 15; i++) 
 {
+    await Task.Delay(400);
     Cliente cliente = new Cliente();
     tasks.Add(cliente.TryEntra(cafe));
 }
@@ -79,14 +80,18 @@ class Cliente : Persona
     public async Task TryEntra(Caffetteria cafe)
     {
         Console.WriteLine("Attendo coda");
-        await cafe.inAttesaEntrata.WaitAsync(); // Attende di entrare
-        await cafe.EntraQueue(true, this);
-        Console.WriteLine("Sono entrato");
-        await cafe.Entra(); // Entra
-        await tcs.Task; // Attende di essere servito
-        Console.WriteLine("Sono stato servito");
-        await cafe.Esci(); // Esce
-        cafe.inAttesaEntrata.Release();
+        if (await cafe.inAttesaEntrata.WaitAsync(100)) // Attende di entrare
+        {
+            await cafe.EntraQueue(true, this);
+            Console.WriteLine("Sono entrato");
+            await cafe.Entra(); // Entra
+            await tcs.Task; // Attende di essere servito
+            Console.WriteLine("Sono stato servito");
+            await cafe.Esci(); // Esce
+            cafe.inAttesaEntrata.Release();
+        }
+        else
+            Console.WriteLine("Bar pieno, esco!");
     }
 }
 
